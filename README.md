@@ -14,4 +14,4 @@ What it fixes
 - Fixes the bug that causes voice lines in the game to be cut off, so all voice lines now play fully.
 
 Credits
-- Fix created and packaged by Vundult.
+- Fix created and packaged by Louie Woolger.
