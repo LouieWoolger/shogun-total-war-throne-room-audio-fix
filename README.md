@@ -6,7 +6,7 @@ What this package contains
 
 Install
 1. Open your "Total War Shogun 1 Gold" game folder.
-2. Copy everything from this 7z into the game folder.
+2. Copy everything from the 7z into the game folder.
 3. Allow Windows to merge folders and replace dsound.dll if prompted.
 4. Done!
 
