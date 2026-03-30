@@ -1,5 +1,4 @@
 Shogun: Total War - Throne Room Audio Fix
-Release build: v1
 
 What this package contains
 - dsound.dll
