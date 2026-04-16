@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 r"""
-Shogun: Total War - Throne Room Audio Fix  (v1)
-===================================================
+Shogun: Total War - Throne Room Audio Fix (dsound workaround) v1.0.0
+====================================================================
 Fixes:
 1. Response clips play immediately (no 3500ms prime delay)
 2. Scene exit: stops on music WAV file opens AND music buffer creation
@@ -11,7 +11,6 @@ Fixes:
 Usage:
     python shogun_audio_fix.py "F:\Games\Total War Shogun 1 Gold"
     python shogun_audio_fix.py "F:\Games\Total War Shogun 1 Gold" --restore
-    python shogun_audio_fix.py "F:\Games\Total War Shogun 1 Gold" --debug-log
 """
 
 import argparse, os, shutil, subprocess, sys, tempfile
@@ -19,7 +18,7 @@ from pathlib import Path
 
 DSOUND_C = r"""
 #define WIN32_LEAN_AND_MEAN
-#define ENABLE_LOGGING __ENABLE_LOGGING__
+#define ENABLE_LOGGING 0
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
@@ -100,6 +99,7 @@ static CRITICAL_SECTION logCS;
 #endif
 static int nextBufId = 1;
 static char gameDir[MAX_PATH] = {0};
+static const char kFixTag[] = "Shogun Throne Audio Fix 1.0.0";
 
 #define DSBCAPS_GCP2 0x80000
 #define MAX_VOICE_STREAM_SIZE 65536
@@ -762,12 +762,8 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID r) {
         GetModuleFileNameA(h,gameDir,MAX_PATH);
         char *sl=strrchr(gameDir,'\\');if(sl)sl[1]='\0';
         char path[MAX_PATH];
-        lstrcpyA(path, gameDir); lstrcatA(path, "dsound.shogun_audio_fix.orig.dll");
+        lstrcpyA(path, gameDir); lstrcatA(path, "dsound.bak");
         hReal = LoadLibraryA(path);
-        if (!hReal) {
-            lstrcpyA(path, gameDir); lstrcatA(path, "dsound.dll.bak");
-            hReal = LoadLibraryA(path);
-        }
         if (!hReal) {
             GetSystemDirectoryA(path, MAX_PATH);
             lstrcatA(path, "\\dsound.dll");
@@ -789,7 +785,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID r) {
         startTick=GetTickCount();
         char lp[MAX_PATH];lstrcpyA(lp,gameDir);lstrcatA(lp,"dsound_log.txt");
         logFile=fopen(lp,"w");
-        if(logFile)L("=== dsound.dll proxy v19 (response+scene+advisor-done) ===");
+        if(logFile)L("=== Shogun Throne Audio Fix 1.0.0 ===");
 #endif
         HookIAT();
     } else if(reason==DLL_PROCESS_DETACH){
@@ -820,13 +816,10 @@ EXPORTS
     DirectSoundFullDuplexCreate = fwd_FullDuplex @11
 """
 
-BACKUP_DSOUND_NAME = "dsound.shogun_audio_fix.orig.dll"
-LEGACY_BACKUP_DSOUND_NAME = "dsound.dll.bak"
+BACKUP_DSOUND_NAME = "dsound.bak"
 
 def find_ffmpeg():
-    for cmd in ["ffmpeg","ffmpeg.exe",
-                r"F:\Games\ffmpeg\bin\ffmpeg.exe",
-                r"C:\ffmpeg\bin\ffmpeg.exe"]:
+    for cmd in ["ffmpeg","ffmpeg.exe"]:
         try:
             r=subprocess.run([cmd,"-version"],capture_output=True,timeout=5)
             if r.returncode==0: return cmd
@@ -834,9 +827,7 @@ def find_ffmpeg():
     return None
 
 def find_compiler():
-    for cmd in ["i686-w64-mingw32-gcc","gcc","cc",
-                r"F:\Games\w64devkit\bin\gcc.exe",
-                r"C:\w64devkit\bin\gcc.exe"]:
+    for cmd in ["i686-w64-mingw32-gcc","gcc","cc"]:
         try:
             r=subprocess.run([cmd,"--version"],capture_output=True,timeout=5)
             if r.returncode==0: return cmd
@@ -863,9 +854,8 @@ def is_our_proxy_dsound(path):
     except OSError:
         return False
     markers = (
-        b"dsound.dll proxy v",
-        b"shogun_audio_fix.orig.dll",
-        b"response+scene+advisor-ui",
+        b"Shogun Throne Audio Fix 1.0.0",
+        b"dsound.bak",
     )
     return any(marker in data for marker in markers)
 
@@ -897,22 +887,19 @@ def restore_dsound(game_dir):
     if ds.exists():
         ds.unlink()
         print("Removed dsound.dll")
-    for name in (BACKUP_DSOUND_NAME, LEGACY_BACKUP_DSOUND_NAME):
-        bak = game_dir/name
-        if bak.exists():
-            if is_our_proxy_dsound(bak):
-                bak.unlink()
-                print("Removed stale proxy backup {}".format(name))
-                continue
-            shutil.move(str(bak), str(ds))
-            print("Restored {}".format(name))
-            break
+    bak = game_dir/BACKUP_DSOUND_NAME
+    if bak.exists():
+        if is_our_proxy_dsound(bak):
+            bak.unlink()
+            print("Removed stale proxy backup {}".format(BACKUP_DSOUND_NAME))
+            return
+        shutil.move(str(bak), str(ds))
+        print("Restored {}".format(BACKUP_DSOUND_NAME))
 
 def backup_existing_dsound(game_dir):
     ds = game_dir/"dsound.dll"
     preferred = game_dir/BACKUP_DSOUND_NAME
-    legacy = game_dir/LEGACY_BACKUP_DSOUND_NAME
-    if ds.exists() and not preferred.exists() and not legacy.exists():
+    if ds.exists() and not preferred.exists():
         if is_our_proxy_dsound(ds):
             print("  Existing dsound.dll is already this proxy; no backup needed")
             return
@@ -920,20 +907,18 @@ def backup_existing_dsound(game_dir):
         print("  Backed up existing dsound.dll -> {}".format(BACKUP_DSOUND_NAME))
 
 def main():
-    parser=argparse.ArgumentParser()
+    parser=argparse.ArgumentParser(
+        description="Install or restore the original dsound.dll throne-room audio workaround."
+    )
     parser.add_argument("game_dir")
     parser.add_argument("--restore",action="store_true")
-    parser.add_argument("--debug-log",action="store_true")
     args=parser.parse_args()
     print("="*62)
-    print("  Shogun: Total War - Throne Room Audio Fix (v1)")
+    print("  Shogun: Total War - Throne Room Audio Fix (dsound workaround) v1.0.0")
     print("="*62)
     game_dir=Path(args.game_dir)
     if not game_dir.exists(): sys.exit("Not found")
     if args.restore:
-        for fn in ["winmm.dll","winmm.dll.bak"]:
-            p=game_dir/fn
-            if p.exists(): p.unlink(); print("Removed "+fn)
         restore_dsound(game_dir)
         removed = cleanup_wavs(game_dir)
         print("Removed {} generated WAV sidecars".format(removed))
@@ -944,20 +929,17 @@ def main():
     convert_mp3s(game_dir, ff)
     print("\nStep 2: Build proxy DLL")
     backup_existing_dsound(game_dir)
-    for fn in ["winmm.dll","winmm.dll.bak"]:
-        p=game_dir/fn
-        if p.exists(): p.unlink()
-    work=Path(tempfile.mkdtemp(prefix="shogun_"))
-    dsound_c = DSOUND_C.replace("__ENABLE_LOGGING__", "1" if args.debug_log else "0")
+    work=Path(tempfile.mkdtemp(prefix="shogun_audio_fix_"))
+    dsound_c = DSOUND_C
     (work/"dsound.c").write_text(dsound_c);(work/"dsound.def").write_text(DSOUND_DEF)
     cc=find_compiler()
-    if not cc: sys.exit("No compiler!")
+    if not cc: sys.exit("No compatible GCC compiler found on PATH.")
     print("  Compiler: "+cc)
     if not compile_dll(work/"dsound.c",work/"dsound.def",work/"dsound.dll",cc): sys.exit(1)
     shutil.copy2(str(work/"dsound.dll"),str(game_dir/"dsound.dll"))
     shutil.rmtree(str(work),ignore_errors=True)
     print("\n"+"="*62)
-    print("  FIX INSTALLED! Test the throne room.")
+    print("  FIX INSTALLED.")
     print('  To restore: python shogun_audio_fix.py "{}" --restore'.format(game_dir))
 
 if __name__=="__main__": main()
