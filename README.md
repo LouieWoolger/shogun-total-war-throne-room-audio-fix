@@ -1,17 +1,58 @@
-Shogun: Total War - Throne Room Audio Fix
+# Shogun: Total War Gold - Throne Room Audio Fix (dsound workaround) v1.0.0
 
-What this package contains
-- dsound.dll
-- 548 .mp3.wav files
+This release installs a proxy `dsound.dll` and generates `.mp3.wav` sidecar files so throne-room speech can be replayed externally instead of being cut off by the game.
 
-Install
-1. Open your "Total War Shogun 1 Gold" game folder.
-2. Copy everything from the 7z into the game folder.
-3. Allow Windows to merge folders and replace dsound.dll if prompted.
-4. Done!
+## What It Does
 
-What it fixes
-- Fixes the bug that causes voice lines in the game to be cut off, so all voice lines now play fully.
+- converts throne-room voice `*.mp3` files into `*.mp3.wav` sidecars
+- installs a proxy `dsound.dll` in the game folder
+- intercepts throne-room voice playback
+- replays the matching WAV externally so lines can finish naturally
+- stops external playback on scene changes, new quotes, and throne-room exit actions
 
-Credits
-- Fix created and packaged by Louie Woolger.
+## What It Creates
+
+In the game folder, the script creates or uses:
+
+- `dsound.dll`
+- `dsound.bak`
+- generated `*.mp3.wav` files
+
+## Requirements
+
+- Windows
+- Python 3
+- `ffmpeg` available on `PATH`
+- MinGW-style `gcc` available on `PATH`
+
+The script looks for:
+
+- `ffmpeg` or `ffmpeg.exe`
+- `i686-w64-mingw32-gcc`, `gcc`, or `cc`
+
+## Usage
+
+Install the workaround:
+
+```powershell
+python .\shogun_audio_fix.py "F:\Games\Total War Shogun 1 Gold"
+```
+
+Restore the original state:
+
+```powershell
+python .\shogun_audio_fix.py "F:\Games\Total War Shogun 1 Gold" --restore
+```
+
+## How Restore Works
+
+Restore will:
+
+- remove the proxy `dsound.dll`
+- restore the original `dsound.dll` from `dsound.bak` if one was backed up
+- remove generated `.mp3.wav` files
+
+## Notes
+
+- This is a workaround release, not a root-cause executable patch.
+- It uses a proxy DLL and generated WAV sidecars rather than editing the game executable.
