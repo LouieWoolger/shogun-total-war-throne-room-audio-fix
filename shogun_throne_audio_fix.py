@@ -13,10 +13,14 @@ from pathlib import Path
 
 PATCH_NAME = "Shogun Throne Audio Fix v2.0.0"
 KNOWN_PATCHED_SHA256 = {
+    "4445DCB123D595A9B68FD18A20B98A9F9332F9651474976636CB9EC54F3D16AF": "original",
+    "A6CECD32946C10B152ADBC8D922BEAC8A67F7A639E6C4A10297297310C427285": "unit_fix_only",
     "11356636154934CC2FF2ED26B46FD82155C05EB52873FE6763F7FD22B1344D32": "original_plus_fix",
-    "141C971763DC50AC2D5DD131E7FECAE87914C96FDB87B4EF25820E3B7A8C89DC": "costfix_plus_fix",
+    "141C971763DC50AC2D5DD131E7FECAE87914C96FDB87B4EF25820E3B7A8C89DC": "unit_audio_fixes",
+    "C7C3A70B5F281546F6A44F975EE795EE157D72A276007F983588F55EC88A9B89": "audio_harvest_fixes",
+    "1154B5703769809D56B80DDB5B25BD98DEE2DED19721AEEFA9254D3EB81A9F78": "unit_audio_harvest_fixes",
 }
-BACKUP_SUFFIX = ".bak"
+BACKUP_SUFFIX = ".throne-room-audio-fix.bak"
 
 PATCHES = [
     {
@@ -75,6 +79,104 @@ PATCHES = [
     },
 ]
 
+UNIT_PATCHES = [
+    {
+        "offset": 0x001364BC,
+        "original": bytes.fromhex("A1 60 04 C7 00"),
+        "patched": bytes.fromhex("B8 3C 00 00 00"),
+        "label": "RecruitCostSizeScalar",
+    },
+    {
+        "offset": 0x00135792,
+        "original": bytes.fromhex("8B C6 83 C4 04 5E 5F C3 8B F6 90 90 90 90"),
+        "patched": bytes.fromhex("E9 37 54 1E 00 90 90 90 90 90 90 90 90 90"),
+        "label": "SupportCostSumTail",
+    },
+    {
+        "offset": 0x0031ABCE,
+        "original": bytes(18),
+        "patched": bytes.fromhex("8B C6 6B C0 3C 99 F7 3D 60 04 C7 00 83 C4 04 5E 5F C3"),
+        "label": "SupportCostCodeCave",
+    },
+    {
+        "offset": 0x0015C550,
+        "original": bytes.fromhex("83 F8 64"),
+        "patched": bytes.fromhex("83 F8 7F"),
+        "label": "TrainingTimeInitLoopCompare",
+    },
+    {
+        "offset": 0x0015C57E,
+        "original": bytes.fromhex("83 F8 64"),
+        "patched": bytes.fromhex("83 F8 7F"),
+        "label": "TrainingTimeInitLoopSpecialCompare",
+    },
+    {
+        "offset": 0x0017CAEE,
+        "original": bytes.fromhex("83 F8 64"),
+        "patched": bytes.fromhex("83 F8 7F"),
+        "label": "TrainingTimeInitUnrolledCompare",
+    },
+    {
+        "offset": 0x001BFA08,
+        "original": bytes.fromhex("83 FA 64"),
+        "patched": bytes.fromhex("83 FA 7F"),
+        "label": "TrainingTimeDoublePassACompare",
+    },
+    {
+        "offset": 0x002E3213,
+        "original": bytes.fromhex("83 F8 64"),
+        "patched": bytes.fromhex("83 F8 7F"),
+        "label": "TrainingTimeDoublePassBCompare",
+    },
+]
+
+HARVEST_FRAME_ID_SETUP = bytes.fromhex(
+    "33 C9 "
+    "89 8C 24 80 02 00 00 "
+    "89 8C 24 84 02 00 00 "
+    "C7 84 24 88 02 00 00 0E 00 00 00 "
+    "B8 0D 00 00 00 "
+    "89 84 24 8C 02 00 00 "
+    "89 84 24 90 02 00 00"
+)
+
+HARVEST_AUDIO_CAVE_TAIL = bytes.fromhex(
+    "9C 60 8B 0D 1C 88 C2 00 85 "
+    "C9 74 11 6A 01 E8 E6 D2 E2 FF C7 05 1C 88 C2 00 "
+    "00 00 00 00 6A 68 E8 C4 15 FE FF 83 C4 04 85 C0 "
+    "74 26 89 C6 31 D2 88 56 01 89 56 04 89 56 08 C6 "
+    "46 0C 01 8D 94 24 64 02 00 00 52 89 F1 E8 AE D5 "
+    "E9 FF 89 35 1C 88 C2 00 61 9D 31 C9 E9 A5 F0 E2 FF"
+)
+
+RESTORED_HARVEST_CODE_CAVE = HARVEST_FRAME_ID_SETUP + (b"\x90" * 9) + HARVEST_AUDIO_CAVE_TAIL
+
+HARVEST_PATCHES = [
+    {
+        "offset": 0x00149D7F,
+        "original": bytes.fromhex("60 32 F1 00"),
+        "patched": bytes.fromhex("80 33 F1 00"),
+        "label": "HarvestReportUseMp3Suffix",
+    },
+    {
+        "offset": 0x00149D88,
+        "original": HARVEST_FRAME_ID_SETUP,
+        "patched": bytes.fromhex(
+            "E9 F3 0E 1D 00 "
+            "90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 "
+            "90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 "
+            "90 90 90 90 90 90 90 90 90"
+        ),
+        "label": "HarvestReportVoiceHook",
+    },
+    {
+        "offset": 0x0031AC80,
+        "original": bytes(0x91),
+        "patched": RESTORED_HARVEST_CODE_CAVE,
+        "label": "HarvestReportCodeCave",
+    },
+]
+
 GENERIC_READ = 0x80000000
 GENERIC_WRITE = 0x40000000
 FILE_SHARE_READ = 0x00000001
@@ -124,6 +226,49 @@ def patch_state(data: bytes) -> tuple[int, int]:
                 f"unsupported bytes at 0x{patch['offset']:08X}: {cur.hex(' ')}"
             )
     return patched, clean
+
+
+def group_state(data: bytes, patches: list[dict]) -> str:
+    states: list[str] = []
+    for patch in patches:
+        start = patch["offset"]
+        end = start + len(patch["patched"])
+        cur = data[start:end]
+        if cur == patch["patched"]:
+            states.append("patched")
+        elif cur == patch["original"]:
+            states.append("clean")
+        else:
+            states.append("unknown")
+
+    unique = set(states)
+    if "unknown" in unique:
+        return "unknown"
+    if unique == {"clean"}:
+        return "clean"
+    if unique == {"patched"}:
+        return "patched"
+    return "partial"
+
+
+def combined_state(unit_state: str, audio_state: str, harvest_state: str) -> str:
+    if "unknown" in {unit_state, audio_state, harvest_state} or "partial" in {unit_state, audio_state, harvest_state}:
+        return "unknown_unsupported"
+    if harvest_state == "patched" and audio_state != "patched":
+        return "unknown_unsupported"
+    if unit_state == "clean" and audio_state == "clean" and harvest_state == "clean":
+        return "original"
+    if unit_state == "patched" and audio_state == "clean" and harvest_state == "clean":
+        return "unit_fix_only"
+    if unit_state == "clean" and audio_state == "patched" and harvest_state == "clean":
+        return "audio_fix_only"
+    if unit_state == "patched" and audio_state == "patched" and harvest_state == "clean":
+        return "unit_audio_fixes"
+    if unit_state == "clean" and audio_state == "patched" and harvest_state == "patched":
+        return "audio_harvest_fixes"
+    if unit_state == "patched" and audio_state == "patched" and harvest_state == "patched":
+        return "unit_audio_harvest_fixes"
+    return "unknown_unsupported"
 
 
 def create_file_shared(path: Path, access: int):
@@ -220,6 +365,9 @@ def chunk_writes(blob: bytes, chunk_size: int = 1 << 20) -> list[tuple[int, byte
 def verify(exe: Path) -> int:
     data = exe.read_bytes()
     patched, clean = patch_state(data)
+    audio_state = group_state(data, PATCHES)
+    unit_state = group_state(data, UNIT_PATCHES)
+    harvest_state = group_state(data, HARVEST_PATCHES)
     digest = sha256(exe)
     known_variant = KNOWN_PATCHED_SHA256.get(digest)
 
@@ -229,6 +377,9 @@ def verify(exe: Path) -> int:
     print(f"patch_slots_patched={patched}")
     print(f"patch_slots_clean={clean}")
     print(f"known_patched_variant={known_variant if known_variant else 'no'}")
+    print(f"combined_state={combined_state(unit_state, audio_state, harvest_state)}")
+    print(f"unit_fix_present={'yes' if unit_state == 'patched' else 'no'}")
+    print(f"harvest_restoration_fix_present={'yes' if harvest_state == 'patched' else 'no'}")
     if patched == len(PATCHES):
         print("status=patched")
     elif clean == len(PATCHES):
