@@ -38,15 +38,17 @@ python .\shogun_throne_audio_fix.py --restore "F:\Games\Shogun Total War Gold"
 
 ## Notes
 
-Before patching, the script creates `ShogunM.exe.bak` in the same folder. An existing backup is preserved.
+Before patching, the script creates `ShogunM.exe.throne-room-audio-fix.bak` in the same folder. An existing backup is preserved.
 
-The patch can be applied to a clean original or a unit-cost-patched executable. The two patch sets touch different offsets and can be applied in either order.
+The patch can be applied to a clean original, a unit-cost-patched executable, or one with the harvest report restoration fix already applied. All three patch sets touch different offsets and can be applied in any order. The harvest report restoration fix includes these audio bytes, so if that fix was applied first, this script will detect the audio fix as already present.
 
 Known SHA-256 values:
 
 ```
 11356636154934CC2FF2ED26B46FD82155C05EB52873FE6763F7FD22B1344D32  original + audio fix
-141C971763DC50AC2D5DD131E7FECAE87914C96FDB87B4EF25820E3B7A8C89DC  unit-cost-patched + audio fix
+141C971763DC50AC2D5DD131E7FECAE87914C96FDB87B4EF25820E3B7A8C89DC  unit-cost + audio fixes
+C7C3A70B5F281546F6A44F975EE795EE157D72A276007F983588F55EC88A9B89  audio + harvest report fixes
+1154B5703769809D56B80DDB5B25BD98DEE2DED19721AEEFA9254D3EB81A9F78  unit-cost + audio + harvest report fixes
 ```
 
-If `--verify` reports `status=already_patched`, the fix is present and no changes are made. If it reports unsupported bytes, restore a clean `ShogunM.exe` first.
+If `--verify` reports `status=patched`, the fix is present and no changes are made. If it reports unsupported bytes, restore a clean `ShogunM.exe` first.
