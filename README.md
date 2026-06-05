@@ -1,6 +1,4 @@
 # Shogun: Total War Gold - Throne Room Audio Fix
-[![Downloads](https://img.shields.io/github/downloads/LouieWoolger/shogun-total-war-throne-room-audio-fix/total?style=for-the-badge)](https://github.com/LouieWoolger/shogun-total-war-throne-room-audio-fix/releases)
-[![Release](https://img.shields.io/github/v/release/LouieWoolger/shogun-total-war-throne-room-audio-fix?style=for-the-badge)](https://github.com/LouieWoolger/shogun-total-war-throne-room-audio-fix/releases/latest)
 [![Discord](https://img.shields.io/discord/1505490825889579018?style=for-the-badge&logo=discord&label=Discord&color=5865F2&cacheSeconds=300)](https://discord.gg/zKbDADqWRC)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5F5F?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/louiewoolger)
 
